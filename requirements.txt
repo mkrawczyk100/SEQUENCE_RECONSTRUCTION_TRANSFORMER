@@ -1,0 +1,12 @@
+# Wymagane
+torch>=2.0
+numpy>=1.24
+
+# Do wykresów
+matplotlib>=3.6
+
+# Opcjonalne: porównanie implementacji własnych z bibliotecznymi
+# (polecenie: python -m scene_rl metrics-table)
+nltk>=3.8
+rouge-score>=0.1.2
+python-Levenshtein>=0.20
