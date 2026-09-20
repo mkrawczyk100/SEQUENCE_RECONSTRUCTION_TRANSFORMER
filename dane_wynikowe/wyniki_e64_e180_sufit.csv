@@ -1,0 +1,9 @@
+etykieta,checkpoint,epoka_lub_iteracja,fragment,exact_match,content_f1,order_tau,missing,hallucinated,levenshtein,bleu,rouge_l,failure_rate
+SFT e64 pelny trening,runs/sft_e64/best.pt,54,3,0.38,0.6688,0.9402841269841269,3.312,3.312,0.6216,0.5222826378715946,0.668,0.0
+SFT e64 pelny trening,runs/sft_e64/best.pt,54,4,0.67,0.8764,0.9952285714285714,1.236,1.236,0.846,0.8108331023030899,0.8757999999999999,0.0
+SFT e64 pelny trening,runs/sft_e64/best.pt,54,6,0.97,0.9938,1.0,0.062,0.062,0.9914,0.9899606663691843,0.9938,0.0
+SFT e64 pelny trening,runs/sft_e64/best.pt,54,8,1.0,1.0,1.0,0.0,0.0,1.0,1.0,1.0,0.0
+SFT e180 pelny trening,runs/sft/best.pt,54,3,1.0,1.0,1.0,0.0,0.0,1.0,1.0,1.0,0.0
+SFT e180 pelny trening,runs/sft/best.pt,54,4,0.998,0.9984,1.0,0.016,0.016,0.9982000000000001,0.998,0.9984,0.0
+SFT e180 pelny trening,runs/sft/best.pt,54,6,1.0,1.0,1.0,0.0,0.0,1.0,1.0,1.0,0.0
+SFT e180 pelny trening,runs/sft/best.pt,54,8,1.0,1.0,1.0,0.0,0.0,1.0,1.0,1.0,0.0
