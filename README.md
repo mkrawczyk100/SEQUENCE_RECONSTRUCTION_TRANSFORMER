@@ -1,93 +1,117 @@
 # Rekonstrukcja sekwencji transformerem z uczeniem ze wzmocnieniem
 
-Kod do pracy magisterskiej „Rekonstrukcja sekwencji za pomocą sztucznej
-sieci neuronowej o architekturze transformera z wykorzystaniem metryk
-podobieństwa i uczenia ze wzmocnieniem".
+Kod źródłowy do pracy magisterskiej „Rekonstrukcja sekwencji za pomocą
+sztucznej sieci neuronowej o architekturze transformera z wykorzystaniem
+metryk podobieństwa i uczenia ze wzmocnieniem", Politechnika Rzeszowska,
+2026.
 
 Zadanie ma charakter pamięci asocjacyjnej adresowanej treścią: model
-otrzymuje niepełny fragment sceny i ma odtworzyć całą zapamiętaną scenę,
-wraz z kolejnością obiektów.
+otrzymuje niepełny fragment sceny (uporządkowanej sekwencji dziesięciu
+identyfikatorów obiektów) i ma odtworzyć całą zapamiętaną scenę, wraz
+z kolejnością obiektów. Model uczony jest dwuetapowo: uczeniem
+nadzorowanym, a następnie dostrajany algorytmem PPO, z nagrodą opartą
+na jednej z trzech metryk podobieństwa (BLEU, ROUGE-L, podobieństwo
+edycyjne Levenshteina).
 
 ## Wymagania
 
-```
 python >= 3.10
 torch >= 2.0
 numpy
-matplotlib          (tylko do wykresów)
-nltk, rouge-score, python-Levenshtein   (opcjonalnie, do porównania
-                                         implementacji własnych
-                                         z bibliotecznymi)
-```
+matplotlib (tylko do wykresów)
+nltk, rouge-score, python-Levenshtein (opcjonalnie, do porównania
+implementacji własnych metryk
+z bibliotecznymi)
 
-Instalacja bibliotek opcjonalnych:
 
-```bash
-pip install nltk rouge-score python-Levenshtein
-```
-
-Bez nich polecenie `metrics-table` pominie kolumny porównawcze,
-a reszta kodu działa bez zmian.
-
-## Szybki start
+Instalacja:
 
 ```bash
-# 1. Sprawdzenie poprawności implementacji
-python -m scene_rl selftest --data sequences_przemek.txt
-
-# 2. Statystyki zbioru (materiał do rozdziału 3)
-python -m scene_rl analyze --data sequences_przemek.txt
-
-# 3. Tabela porównawcza metryk (materiał do rozdziału 2.5)
-python -m scene_rl metrics-table
-
-# 4. Etap 1: uczenie nadzorowane
-python -m scene_rl train-sft --data sequences_przemek.txt \
-    --epochs 60 --out runs/sft --seed 1234
-
-# 5. Etap 2: dostrajanie PPO, osobno każdą metryką
-python -m scene_rl train-ppo --sft runs/sft/best.pt \
-    --reward levenshtein --out runs/ppo_lev --seed 1234
-python -m scene_rl train-ppo --sft runs/sft/best.pt \
-    --reward bleu --out runs/ppo_bleu --seed 1234
-python -m scene_rl train-ppo --sft runs/sft/best.pt \
-    --reward rouge_l --out runs/ppo_rouge --seed 1234
-
-# 6. Porównanie modeli w mierze docelowej (tabela do rozdziału 5)
-python -m scene_rl compare --checkpoints \
-    runs/sft/best.pt runs/ppo_lev/best.pt \
-    runs/ppo_bleu/best.pt runs/ppo_rouge/best.pt \
-    --num-scenes 500 --save wyniki/porownanie.json
-
-# 7. Ocena w funkcji długości fragmentu wejściowego
-python -m scene_rl evaluate runs/sft/best.pt --by-length
-
-# 8. Wykresy przebiegu treningu
-python -m scene_rl plots runs/sft/history_sft.jsonl --out figures/sft
+pip install -r requirements.txt
+pip install nltk rouge-score python-Levenshtein   # opcjonalnie
 ```
 
-Trzy przebiegi PPO startują z tego samego checkpointu, mają ten sam
-budżet obliczeniowy i to samo ziarno losowości. Różnią się wyłącznie
-metryką pełniącą funkcję nagrody, co jest warunkiem uczciwości
-porównania.
+Bez bibliotek opcjonalnych polecenie `metrics-table` pomija kolumny
+porównawcze, reszta kodu działa bez zmian.
 
-## Struktura pakietu
+## Struktura repozytorium
+
+scene_rl/ pakiet z implementacją modelu, treningu i metryk
+tests/ testy jednostkowe (nie wymagają PyTorcha)
+dane_wynikowe/ dane liczbowe i wykresy leżące u podstaw rozdziału 5
+sequences_przemek.txt zbiór danych, 500 scen po 10 obiektów
+uruchom_eksperyment.sh pełna sekwencja poleceń odtwarzająca eksperyment
+uruchom_ppo_wieloziarnowo.py uruchamia train-ppo dla siatki metryk x ziaren
+zbierz_krzywe_ppo.py zbiera historie PPO w zbiorcze pliki CSV
+tabela_koncowa_ppo.py buduje tabele końcowe (rozdział 5) z historii
+wybor_modelu_ppo.py analiza wyboru rozmiaru modelu (podrozdział 4.3)
+
+
+### Pakiet `scene_rl`
 
 | Plik | Zawartość |
 |---|---|
-| `config.py` | hiperparametry w postaci struktur danych, zapisywane w checkpointach |
+| `config.py` | hiperparametry jako struktury danych, zapisywane w checkpointach |
 | `data.py` | wczytanie scen, tokenizacja, łańcuch rekonstrukcji, partie danych |
 | `metrics.py` | BLEU, ROUGE-L, podobieństwo edycyjne, miara docelowa |
 | `model.py` | transformer decoder-only, głowica wartości, generowanie |
 | `sft.py` | etap 1: uczenie nadzorowane |
 | `ppo.py` | etap 2: dostrajanie algorytmem PPO |
 | `evaluation.py` | rekonstrukcja wsadowa i ocena jakości |
-| `utils.py` | ziarna losowości, checkpointy, logowanie historii |
+| `capacity.py` | oszacowanie pojemności informacyjnej modelu (podrozdział 5.6) |
+| `utils.py` | ziarna losowości, checkpointy |
 | `selftest.py` | autotesty implementacji |
 | `__main__.py` | interfejs wiersza poleceń |
 
-Testy niewymagające PyTorcha znajdują się w katalogu `tests/`
-i uruchamia się je bezpośrednio:
+## Interfejs wiersza poleceń
+
+Cały eksperyment daje się odtworzyć bez notatnika, poleceniami modułu
+`scene_rl`:
+
+```bash
+# Statystyki zbioru danych (rozdział 3)
+python -m scene_rl analyze --data sequences_przemek.txt
+
+# Tabela porównawcza metryk podobieństwa (podrozdział 2.5)
+python -m scene_rl metrics-table
+
+# Autotesty implementacji
+python -m scene_rl selftest --data sequences_przemek.txt
+
+# Etap 1: uczenie nadzorowane
+python -m scene_rl train-sft --data sequences_przemek.txt \
+    --epochs 60 --n-embd 96 --n-head 4 --n-layer 4 \
+    --seed 1234 --out runs/sft_e96
+
+# Etap 2: dostrajanie PPO, osobno dla każdej metryki nagrody
+python -m scene_rl train-ppo --sft runs/sft_e96/best.pt \
+    --reward levenshtein --iterations 1000 --seed 1234 \
+    --out runs/ppo_levenshtein_seed1234
+
+# Ocena pojedynczego modelu w funkcji długości fragmentu
+python -m scene_rl evaluate runs/sft_e96/best.pt \
+    --by-length --greedy --num-scenes 500
+
+# Porównanie kilku checkpointów w mierze docelowej
+python -m scene_rl compare --checkpoints \
+    runs/sft_e96/best.pt runs/ppo_levenshtein_seed1234/best.pt \
+    --greedy --save wyniki/porownanie.json
+
+# Kilka przykładowych rekonstrukcji "na żywo"
+python -m scene_rl demo runs/sft_e96/best.pt --n 6 --prompt-length 3
+
+# Wykresy z historii treningu
+python -m scene_rl plots runs/sft_e96/history_sft.jsonl --out figures/sft
+
+# Oszacowanie pojemności modelu (podrozdział 5.6)
+python -m scene_rl capacity --n-embd 96 --n-layer 4 --block-size 64
+```
+
+Pełny, wieloziarnowy eksperyment PPO (dziewięć przebiegów: trzy metryki
+razy trzy ziarna) uruchamia `uruchom_ppo_wieloziarnowo.py`, cienka
+nakładka na `train-ppo` z pętlą po obu listach.
+
+### Testy
 
 ```bash
 python tests/test_metrics.py
@@ -97,128 +121,29 @@ python tests/test_rollout_indices.py
 python tests/static_check.py
 ```
 
-## Poprawki względem wersji notatnikowej
+## Zawartość folderu `dane_wynikowe`
 
-Poniższa lista dokumentuje różnice między tym kodem a notatnikiem
-`19_07_2026.ipynb`. Punkty od 1 do 4 wpływają na wartości liczbowe,
-więc wyników policzonych poprzednią wersją nie należy raportować.
+Pliki leżące u podstaw tabel i rysunków rozdziału 5.
 
-**1. Błąd o jeden przy wycinaniu odzyskanej sceny.** Poprzednio
-`answer[last_sep + 1 : stop - 1]` obcinało ostatni obiekt każdej
-rekonstrukcji, co zaniżało wszystkie metryki i zawyżało liczbę obiektów
-brakujących. Poprawnie: `answer[last_sep + 1 : stop]`.
+| Plik | Materiał do |
+|---|---|
+| `history_e64.jsonl`, `history_e96.jsonl`, `history_e180.jsonl` | Rys. 5.1–5.3, przebieg uczenia nadzorowanego trzech architektur |
+| `wyniki_odniesienia.csv`, `krok0.txt` | Tab. 5.3–5.4, trajektoria modelu e96 i sufit uczenia nadzorowanego |
+| `krzywe_ppo_glowny.csv` | Rys. 5.7–5.8, krzywe uczenia PPO (seria główna) |
+| `krzywe_ppo_sonda3000.csv` | Rys. 5.10, sonda wydłużona do 3000 iteracji |
+| `wyniki_levenshtein_3000_tabela.csv` | Tab. 5.5, porównanie 1000 i 3000 iteracji |
+| `wyniki_tabela_koncowa_z5.csv` | Tab. 5.6–5.7, 5.9–5.10, wyniki końcowe wszystkich wariantów |
+| `wyniki_tabela_koncowa_last.csv` | Tab. 5.9, porównanie checkpointów best.pt i last.pt |
+| `wyniki_e64_e180_sufit.csv` | Tab. 5.3, sufit modeli e64 i e180 |
+| `krzywe_kl000.csv`, `krzywe_kl001.csv`, `krzywe_kl005.csv` | Tab. 4.7, dobór współczynnika kary za rozbieżność |
+| `demo_start_len*.txt`, `demo_ppo3000_len*.txt` | Tab. 5.10–5.11, przykłady rekonstrukcji przed i po dostrajaniu |
 
-**2. Skalowanie iloczynu skalarnego uwagi.** Poprzednio dzielono przez
-pierwiastek z `n_embd` zamiast z wymiaru głowy `d_k`. Przy `n_embd = 180`
-i `n_head = 6` współczynnik był zaniżony pierwiastkiem z sześciu, przez
-co rozkład uwagi był nadmiernie wygładzony. Wzór jest teraz zgodny
-z pracą Vaswaniego i innych.
+## Uwaga o wersji sprzed pakietu
 
-**3. Pozycja fragmentu wejściowego.** Poprzednio łańcuch rekonstrukcji
-zawsze zaczynał się od fragmentu trzyelementowego, a okno kontekstowe
-wycinano z losowego miejsca sklejonego ciągu wszystkich scen. Fragment
-sześcioelementowy, używany przy ewaluacji, nigdy nie występował na
-początku okna, więc embedding pozycyjny przy inferencji nie odpowiadał
-temu, co model widział w treningu. Obecnie okno startuje na granicy
-podsekwencji, dzięki czemu fragment dowolnej długości pojawia się na
-pozycji zerowej.
-
-**4. Tempo uczenia.** Poprzednio zmienna `learning_rate` była nadpisywana
-w komórce pętli treningowej i zapisywana do historii, ale optymalizator
-zachowywał wartość podaną przy jego utworzeniu. Raportowane tempo
-uczenia nie odpowiadało rzeczywistemu. Obecnie wartość trafia do
-`optimizer.param_groups`, a harmonogram obejmuje rozgrzewkę i wygaszanie
-cosinusem.
-
-**5. Wypełnienie i maskowanie straty.** Wprowadzono token `PAD` o
-indeksie 2. Przykłady krótsze od okna są dopełniane, a pozycje
-wypełnienia oraz fragmentu wejściowego nie wnoszą wkładu do entropii
-krzyżowej. Model nie uczy się rekonstrukcji urwanych.
-
-**6. Zliczanie na wielozbiorach.** Poprzednio używano operatora `in`
-i funkcji `set`, co przy 21 scenach zawierających ten sam obiekt
-dwukrotnie dawało błędne liczby obiektów odtworzonych i brakujących.
-
-**7. Ziarna losowości.** Poprzednio nie ustalano żadnego ziarna, więc
-dwa uruchomienia tego samego eksperymentu dawały różne wyniki.
-
-**8. Implementacja BLEU.** Poprzednio używano biblioteki NLTK, podczas
-gdy praca deklaruje implementację własną. Obecnie BLEU liczony jest
-własnym kodem, a polecenie `metrics-table` zestawia go z wynikiem
-bibliotecznym.
-
-**9. Nazwa klasy modelu.** `BigramLanguageModel` zmieniono na
-`SceneTransformer`. Model nie jest bigramowy: przewiduje kolejny token
-na podstawie całego widocznego prefiksu.
-
-**10. Generowanie.** Kończy się na tokenie `STOP` zamiast generować
-stałą liczbę tokenów i szukać `STOP` po fakcie. Obsługuje temperaturę,
-obcinanie do k najlepszych tokenów oraz wariant zachłanny. Token `PAD`
-nigdy nie może zostać wygenerowany.
-
-**11. Wydajność generowania.** Rekonstrukcje liczone są wsadowo, po
-grupach fragmentów o jednakowej długości, zamiast scena po scenie.
-
-**12. Format historii treningu.** Poprzednio zapisywano tekstową
-reprezentację tensorów, postaci `tensor(0.4253, device='cuda:0')`, którą
-trzeba było parsować przed narysowaniem wykresu. Obecnie historia
-zapisywana jest jako JSONL oraz CSV z liczbami.
-
-**13. Checkpointy.** Zawierają pełną konfigurację eksperymentu, dzięki
-czemu dowolną nową metrykę można policzyć bez powtarzania treningu,
-a model odtworzyć bez zgadywania hiperparametrów.
-
-## Elementy dodane, nieobecne w wersji notatnikowej
-
-**Miara docelowa.** Weryfikacja hipotezy wymaga miary niezależnej od
-metryk użytych jako nagroda. Model dostrajany nagrodą BLEU wygrałby
-w BLEU z samej definicji, więc porównanie oparte na metrykach nagrody
-byłoby cyrkularne. Miara docelowa raportuje rozdzielnie:
-
-- zgodność zawartości sceny: liczby obiektów odtworzonych, brakujących
-  i halucynowanych oraz precyzja, czułość i F1 liczone na wielozbiorach,
-- zgodność uporządkowania: współczynnik tau liczony wyłącznie na
-  obiektach wspólnych, dzięki czemu jest niezależny od zgodności
-  zawartości,
-- zgodność pozycyjna, błąd długości i udział rekonstrukcji dokładnych.
-
-Rozdzielenie zawartości od uporządkowania odpowiada wprost na pytanie
-badawcze o to, czy poprawa dotyczy doboru obiektów, czy ich kolejności.
-
-**Pełna implementacja PPO.** Stanem jest prefiks sekwencji, akcją wybór
-tokenu, epizod kończy się na `STOP`. Nagroda metryczna jest rzadka,
-przyznawana w kroku terminalnym, ponieważ metryki podobieństwa są
-zdefiniowane dla całych sekwencji. Zaimplementowano uogólnioną estymację
-przewagi, obcinanie ilorazu prawdopodobieństw, obcinanie funkcji
-wartości, premię entropijną oraz karę za rozbieżność względem polityki
-odniesienia, czyli zamrożonej kopii modelu po etapie pierwszym. Bez tej
-kary polityka degeneruje się do sekwencji maksymalizujących metrykę.
-
-**Wyłączanie dropoutu w PPO.** Iloraz prawdopodobieństw polityki nowej
-i starej musi wynosić dokładnie jeden przed pierwszą aktualizacją.
-Aktywny dropout losowo zeruje aktywacje, więc to samo przejście w przód
-dwukrotnie daje różne log-prawdopodobieństwa, co zaburza próbkowanie
-ważone leżące u podstaw metody.
-
-**Weryfikacja długości okna.** `required_block_size` wyznacza empirycznie
-minimalną wystarczającą wartość `block_size`, a trening przerywa się
-komunikatem błędu, gdy podana wartość jest za mała. Dla scen
-dziesięcioelementowych cały proces rekonstrukcji zajmuje 60 tokenów,
-więc `block_size` musi wynosić co najmniej 61.
-
-**Autotesty.** Polecenie `selftest` sprawdza własności, które w razie
-błędu nie objawiają się awarią programu, lecz cichym pogorszeniem
-wyników: szczelność maskowania przyczynowego, poprawność skalowania
-uwagi, pomijanie wypełnienia w funkcji straty, wyrównanie indeksów
-log-prawdopodobieństw, iloraz PPO równy jedności przed aktualizacją,
-harmonogram tempa uczenia oraz zdolność modelu do przeuczenia
-pojedynczej partii danych.
-
-## Uwaga o wynikach z poprzednich przebiegów
-
-Pliki `loss_history.txt`, `val_history.txt`, `lr_history.txt`
-i `similarity_metrics_history.txt` pochodzą z konfiguracji, której nie da
-się odtworzyć z notatnika: przy zapisanych tam parametrach liczba
-zarejestrowanych pomiarów nie zgadza się z liczbą epok. Wartości
-`lr_history.txt` wynoszą 0,0005, podczas gdy optymalizator działał
-z tempem 0,001. Do pracy należy użyć wyników z nowych przebiegów.
+Wcześniejsza, notatnikowa wersja tego kodu zawierała kilka błędów
+wpływających na wartości liczbowe (m.in. błędne skalowanie iloczynu
+skalarnego uwagi, nienaktualizowane tempo uczenia w optymalizatorze,
+zliczanie na zbiorach zamiast wielozbiorach), opisanych szczegółowo
+w podrozdziałach 4.1–4.3 pracy. Wyników policzonych tamtą wersją nie
+należy traktować jako miarodajnych; niniejszy pakiet jest wersją
+poprawioną i jedyną, na której oparto wyniki przedstawione w pracy.
