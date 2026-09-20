@@ -1,8 +1,6 @@
 # Rekonstrukcja sekwencji transformerem z uczeniem ze wzmocnieniem
 
-Kod źródłowy do pracy magisterskiej „Rekonstrukcja sekwencji za pomocą
-sztucznej sieci neuronowej o architekturze transformera z wykorzystaniem
-metryk podobieństwa i uczenia ze wzmocnieniem", Politechnika Rzeszowska,
+Kod źródłowy do pracy magisterskiej „Rekonstrukcja sekwencji za pomocą sztucznej sieci neuronowej o architekturze transformera", Politechnika Rzeszowska,
 2026.
 
 Zadanie ma charakter pamięci asocjacyjnej adresowanej treścią: model
