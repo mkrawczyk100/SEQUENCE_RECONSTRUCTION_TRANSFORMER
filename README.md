@@ -3,7 +3,7 @@
 Kod źródłowy do pracy magisterskiej „Rekonstrukcja sekwencji za pomocą sztucznej sieci neuronowej o architekturze transformera", Politechnika Rzeszowska,
 2026.
 
-Zadanie ma charakter pamięci asocjacyjnej adresowanej treścią: model
+Zadanie ma charakter pamięci asocjacyjnej adresowanej treścią. Model
 otrzymuje niepełny fragment sceny (uporządkowanej sekwencji dziesięciu
 identyfikatorów obiektów) i ma odtworzyć całą zapamiętaną scenę, wraz
 z kolejnością obiektów. Model uczony jest dwuetapowo: uczeniem
@@ -14,10 +14,15 @@ edycyjne Levenshteina).
 ## Wymagania
 
 python >= 3.10
+
 torch >= 2.0
+
 numpy
+
 matplotlib (tylko do wykresów)
+
 nltk, rouge-score, python-Levenshtein (opcjonalnie, do porównania
+
 implementacji własnych metryk
 z bibliotecznymi)
 
