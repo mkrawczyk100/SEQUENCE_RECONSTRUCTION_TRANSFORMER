@@ -143,10 +143,4 @@ Pliki leżące u podstaw tabel i rysunków rozdziału 5.
 
 ## Uwaga o wersji sprzed pakietu
 
-Wcześniejsza, notatnikowa wersja tego kodu zawierała kilka błędów
-wpływających na wartości liczbowe (m.in. błędne skalowanie iloczynu
-skalarnego uwagi, nienaktualizowane tempo uczenia w optymalizatorze,
-zliczanie na zbiorach zamiast wielozbiorach), opisanych szczegółowo
-w podrozdziałach 4.1–4.3 pracy. Wyników policzonych tamtą wersją nie
-należy traktować jako miarodajnych; niniejszy pakiet jest wersją
-poprawioną i jedyną, na której oparto wyniki przedstawione w pracy.
+Wcześniejsza, notatnikowa wersja tego kodu różniła się od niniejszego pakietu w kilku miejscach wpływających na wartości liczbowe. Obiekty brakujące i dodatkowe zliczano operatorem in, czyli bez uwzględnienia powtórzeń, co zaniżało wyniki dla scen zawierających ten sam obiekt dwukrotnie. Niniejszy pakiet zlicza na wielozbiorach, zgodnie z podrozdziałami 3.2 i 3.6 pracy. Wszystkie wyniki przedstawione w pracy policzono wyłącznie tym pakietem.
